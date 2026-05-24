@@ -1,0 +1,32 @@
+model:
+  name: AdaptiveTextDreamer
+  llm: google/flan-t5-xl
+  freeze_llm: true
+  freeze_vit: true
+  num_query_tokens: 32
+  qformer_hidden_dim: 768
+  qformer_num_layers: 6
+  qformer_num_heads: 12
+  sgca_num_layers: 4
+  sgca_hidden_dim: 512
+  graph_hidden_dim: 768
+  graph_num_layers: 4
+training:
+  phase1_iters: 50000
+  phase2_iters: 200000
+  optimizer: adamw
+  lr: 1e-5
+  weight_decay: 0.05
+  grad_clip: 1.0
+  lambda_bc: 1.0
+data:
+  dataset: r2r
+  data_dir: data/R2R
+  use_prevalent: true
+  image_size: 224
+  num_candidates: 36
+  max_instruction_length: 80
+evaluation:
+  validate_every: 5000
+  metrics: [SR, SPL, NE, OSR, TL]
+  split: val_unseen

@@ -1,0 +1,23 @@
+model:
+  name: XDreamer
+  sd_model_id: stabilityai/stable-diffusion-2-1-base
+  freeze_sd: true
+  cam_feature_dim: 1024
+  text_feature_dim: 1024
+  lora_rank: 4
+  lora_rank_prime: 4
+  ama_loss_weight: 0.1
+  ama_start_iter: 1000
+training:
+  geometry_iters: 2000
+  appearance_iters: 1000
+  batch_size: 4
+  lr: 1e-3
+camera:
+  pitch_range: [-15.0, 45.0]
+  yaw_range: [-180.0, 180.0]
+  fov_range: [25.0, 45.0]
+evaluation:
+  metrics: [CLIP_Score, OpenCLIP_Score, User_Study_Geo, User_Study_App]
+  num_render_views: 8
+  render_resolution: 512

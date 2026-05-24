@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dreamer World Workbench</title>
+<style>
+  :root{
+    --bg:#0b0d10;--panel:#12161b;--panel2:#171d23;--line:#2b333c;
+    --text:#eef2f6;--muted:#9aa6b2;--blue:#4ea1ff;--green:#42c77b;--gold:#d9a441;--red:#ef5b5b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+  .shell{max-width:1180px;margin:0 auto;padding:24px 18px 40px}
+  header{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;padding:12px 0 18px;border-bottom:1px solid var(--line)}
+  h1{font-size:clamp(28px,5vw,52px);line-height:1;margin:0;letter-spacing:0}
+  h2{margin:0 0 14px;font-size:22px;letter-spacing:0}
+  h3{margin:0 0 8px;font-size:16px;letter-spacing:0}
+  p{margin:0;color:var(--muted);line-height:1.55}
+  .status{display:flex;gap:8px;align-items:center;color:var(--muted);font-weight:700}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--gold);display:inline-block}
+  nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+  button,.linkbtn{min-height:40px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text);font-weight:800;padding:10px 14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+  button.active,button.primary,.linkbtn.primary{background:var(--blue);border-color:var(--blue);color:#07101c}
+  button.good{background:var(--green);border-color:var(--green);color:#07130c}
+  .panel{display:none}.panel.active{display:block}
+  .grid{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:16px}
+  .grid.equal{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .box{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px}
+  .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+  label{display:block;color:var(--muted);font-size:12px;font-weight:900;text-transform:uppercase;margin:0 0 8px}
+  input,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:12px;font:inherit}
+  textarea{min-height:130px;resize:vertical}
+  .preview{height:440px;background:#0e1318;border:1px solid var(--line);border-radius:8px;display:grid;place-items:center;overflow:hidden}
+  .preview img{width:100%;height:100%;object-fit:contain}
+  .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px;min-height:76px}
+  .stat span{display:block;color:var(--muted);font-size:11px;font-weight:900;text-transform:uppercase}
+  .stat strong{display:block;margin-top:8px;font-size:20px;overflow-wrap:anywhere}
+  .prediction{display:grid;gap:16px}
+  .result-section{background:#10161d;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .section-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:12px 14px;border-bottom:1px solid var(--line);background:#151b21}
+  .section-head strong{display:block;font-size:16px}
+  .section-head p{font-size:13px}
+  .section-body{padding:14px}
+  .trace{display:grid;gap:10px}
+  .trace-step{display:grid;grid-template-columns:42px minmax(0,1fr) 190px;gap:12px;align-items:start;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px}
+  .trace-main{min-width:0}
+  .trace-main strong{display:block;font-size:17px;overflow-wrap:anywhere}
+  .trace-main p{margin-top:6px;color:#c8d3df}
+  .trace-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .metric{background:#0e1318;border:1px solid var(--line);border-radius:8px;padding:8px}
+  .metric span,.trace-main span,.brief-section span{display:block;color:var(--muted);font-size:11px;font-weight:900;text-transform:uppercase;margin-bottom:5px}
+  .metric strong{font-size:16px}
+  .step-num{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#0e1318;border:2px solid var(--blue);font-weight:900}
+  .brief-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .brief-section{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px}
+  .brief-section strong{display:block;margin-bottom:8px}
+  .brief-section ul{margin:0;padding-left:18px;color:#c8d3df;line-height:1.45}
+  .brief-section li{margin:5px 0}
+  .candidate-list{display:grid;gap:10px}
+  .candidate{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px}
+  .candidate strong{display:block;margin-bottom:6px}
+  .obs-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .obs-card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px}
+  .obs-card-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}
+  .obs-card-head strong{font-size:16px}
+  .obs-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
+  .progress{height:8px;background:#0e1318;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+  .progress span{display:block;height:100%;background:var(--green)}
+  .evidence{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .pill{font-size:12px;color:var(--text);background:#24303a;border:1px solid var(--line);border-radius:999px;padding:5px 8px}
+  .route-preview{height:300px;background:#0e1318;border:1px solid var(--line);border-radius:8px;display:grid;place-items:center;overflow:hidden;margin-top:12px}
+  .route-preview img{width:100%;height:100%;object-fit:contain}
+  .analysis-preview{height:430px;background:#0e1318;border:1px solid var(--line);border-radius:8px;display:grid;place-items:center;overflow:hidden}
+  .analysis-preview img{width:100%;height:100%;object-fit:contain}
+  .showcase{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr);gap:16px;margin-bottom:16px}
+  .featured-asset{background:#0e1318;border:1px solid var(--line);border-radius:8px;overflow:hidden;min-height:330px;display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,.75fr)}
+  .featured-asset img{width:100%;height:100%;min-height:330px;object-fit:contain;background:#080b0f;border-right:1px solid var(--line)}
+  .featured-copy{padding:18px;display:flex;flex-direction:column;justify-content:center;gap:10px}
+  .featured-copy h2{font-size:28px;margin:0}
+  .featured-copy p{font-size:15px}
+  .usecase{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px}
+  .usecase ol{margin:10px 0 0;padding-left:20px;color:#c8d3df;line-height:1.5}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{color:var(--muted);font-size:12px;text-transform:uppercase}
+  tr:last-child td{border-bottom:0}
+  .asset-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  .asset{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .asset img{width:100%;height:150px;object-fit:contain;background:#0e1318;border-bottom:1px solid var(--line)}
+  .asset div{padding:10px}
+  .raw{white-space:pre-wrap;background:#0e1318;border:1px solid var(--line);border-radius:8px;padding:12px;color:#c8d3df;max-height:340px;overflow:auto}
+  @media(max-width:860px){.grid,.grid.equal,.asset-list,.brief-grid,.trace-step,.trace-metrics,.obs-grid,.obs-metrics,.showcase,.featured-asset{grid-template-columns:1fr}.featured-asset img{border-right:0;border-bottom:1px solid var(--line)}.preview{height:320px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}header{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div>
+      <h1>Dreamer World Workbench</h1>
+      <p>Indoor route planning, local sensor replay, image-to-3D prompts, and generated mesh assets.</p>
+    </div>
+    <div class="status"><span class="dot" id="serverDot"></span><span id="serverText">Checking backend</span></div>
+  </header>
+
+  <nav>
+    <button class="active" onclick="showTab(event,'system')">System</button>
+    <button onclick="showTab(event,'generate')">Generate 3D</button>
+    <button onclick="showTab(event,'image')">Analyze Image</button>
+    <button onclick="showTab(event,'predict')">Predict Route</button>
+    <button onclick="showTab(event,'evaluate')">Evaluate</button>
+  </nav>
+
+  <section id="generate" class="panel">
+    <div class="grid">
+      <div class="box">
+        <h2>3D Generation</h2>
+        <label for="prompt">Prompt</label>
+        <input id="prompt" value="A blue crystal tower with sharp facets glowing glass">
+        <div class="bar">
+          <button class="primary" onclick="generateMesh()">Generate Mesh</button>
+          <button onclick="loadResults()">Refresh Assets</button>
+        </div>
+        <p id="genStatus" style="margin-top:12px">Ready.</p>
+        <div class="stats" id="meshStats">
+          <div class="stat"><span>Kind</span><strong>-</strong></div>
+          <div class="stat"><span>Material</span><strong>-</strong></div>
+          <div class="stat"><span>Vertices</span><strong>-</strong></div>
+          <div class="stat"><span>Faces</span><strong>-</strong></div>
+        </div>
+        <div class="bar" id="meshDownloads"></div>
+      </div>
+      <div class="box">
+        <h2>Generated Preview</h2>
+        <div class="preview" id="previewBox"><p>No generated mesh selected.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="image" class="panel">
+    <div class="grid">
+      <div class="box">
+        <h2>Image Upload</h2>
+        <label for="imageFile">Image</label>
+        <input id="imageFile" type="file" accept="image/*">
+        <label for="objectHint" style="margin-top:14px">Object focus</label>
+        <input id="objectHint" value="chair" placeholder="chair, vase, lamp, statue, table">
+        <div class="bar">
+          <button class="primary" onclick="analyzeImage()">Analyze Image</button>
+          <button onclick="useImagePrompt()">Use as 3D Prompt</button>
+        </div>
+        <p id="imageStatus" style="margin-top:12px">Upload an image to get scene/material cues and a generated prompt.</p>
+        <div class="stats" id="imageStats">
+          <div class="stat"><span>Scene</span><strong>-</strong></div>
+          <div class="stat"><span>Kind</span><strong>-</strong></div>
+          <div class="stat"><span>Material</span><strong>-</strong></div>
+          <div class="stat"><span>Size</span><strong>-</strong></div>
+        </div>
+        <label style="margin-top:14px">Suggested Prompt</label>
+        <textarea id="imagePrompt" rows="3"></textarea>
+        <div class="bar" id="imageDownloads"></div>
+      </div>
+      <div class="box">
+        <h2>Analysis Report</h2>
+        <div class="analysis-preview" id="analysisPreview"><p>Analysis image appears here.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="predict" class="panel">
+    <div class="grid">
+      <div class="box">
+        <h2>Navigation Prediction</h2>
+        <label for="instruction">Instruction</label>
+        <textarea id="instruction">Walk down the stairs and walk towards the red sofa. Turn left and enter the bathroom.</textarea>
+        <div class="stats">
+          <div class="stat"><span>Yaw</span><strong><input id="yaw" value="0" style="padding:6px"></strong></div>
+          <div class="stat"><span>Pitch</span><strong><input id="pitch" value="15" style="padding:6px"></strong></div>
+          <div class="stat"><span>FOV</span><strong><input id="fov" value="60" style="padding:6px"></strong></div>
+          <div class="stat"><span>Mode</span><strong>Local</strong></div>
+        </div>
+        <div class="bar"><button class="good" onclick="predictRoute()">Predict Next Step</button></div>
+        <p id="navStatus" style="margin-top:12px">Ready.</p>
+      </div>
+      <div class="box">
+        <h2>Predicted Route Image</h2>
+        <div class="route-preview" id="routePreview"><p>Prediction image appears here.</p></div>
+        <div class="bar" id="routeDownloads"></div>
+        <div class="stats" id="navTopStats">
+          <div class="stat"><span>Target</span><strong>-</strong></div>
+          <div class="stat"><span>Action</span><strong>-</strong></div>
+          <div class="stat"><span>Confidence</span><strong>-</strong></div>
+          <div class="stat"><span>Direction</span><strong>-</strong></div>
+        </div>
+        <div class="prediction" id="predictions" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="evaluate" class="panel">
+    <div class="grid equal">
+      <div class="box">
+        <h2>R2R JSON Evaluation</h2>
+        <label for="r2rFile">Prediction/reference JSON</label>
+        <input id="r2rFile" type="file" accept="application/json,.json">
+        <div class="bar">
+          <button class="primary" onclick="uploadR2R()">Compute Metrics</button>
+          <a class="linkbtn" href="/api/example-r2r" download>Example JSON</a>
+        </div>
+        <p id="r2rStatus" style="margin-top:12px">No file loaded.</p>
+      </div>
+      <div class="box">
+        <h2>Computed Metrics</h2>
+        <div class="stats" id="evalStats">
+          <div class="stat"><span>SR</span><strong>-</strong></div>
+          <div class="stat"><span>SPL</span><strong>-</strong></div>
+          <div class="stat"><span>NE</span><strong>-</strong></div>
+          <div class="stat"><span>Episodes</span><strong>-</strong></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="system" class="panel active">
+    <div class="showcase">
+      <div class="featured-asset" id="featuredAsset">
+        <div class="featured-copy">
+          <h2>DWF System Showcase</h2>
+          <p>Generate 3D meshes, analyze uploaded object images, predict indoor navigation routes, and export mission reports from one local app.</p>
+        </div>
+      </div>
+      <div class="usecase">
+        <h2>Use Case</h2>
+        <p>Present the system as a local AI workbench for indoor navigation and scene prototyping.</p>
+        <ol>
+          <li>Generate or inspect a 3D asset.</li>
+          <li>Analyze an uploaded image into a 3D prompt.</li>
+          <li>Predict a route from language instructions.</li>
+          <li>Export a mission brief for evaluation or demo review.</li>
+        </ol>
+        <div class="bar">
+          <button class="primary" onclick="showTab(event,'generate')">Generate Asset</button>
+          <button onclick="showTab(event,'predict')">Predict Route</button>
+        </div>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="box">
+        <h2>Real Local Assets</h2>
+        <div class="stats" id="assetStats">
+          <div class="stat"><span>Assets</span><strong>-</strong></div>
+          <div class="stat"><span>Avg Vertices</span><strong>-</strong></div>
+          <div class="stat"><span>Avg Faces</span><strong>-</strong></div>
+          <div class="stat"><span>Mesh Score</span><strong>-</strong></div>
+        </div>
+        <p id="resultSource" style="margin-top:12px">Loading.</p>
+      </div>
+      <div class="box">
+        <h2>WorldDreamer Output Meaning</h2>
+        <table>
+          <tr><th>Part</th><th>Concrete output</th></tr>
+          <tr><td>TextDreamer</td><td>Extracted landmarks, rooms, turns, and predicted next action.</td></tr>
+          <tr><td>X-Dreamer</td><td>Saved OBJ, MTL, STL, SVG preview, and mesh quality metadata.</td></tr>
+          <tr><td>WorldDreamer</td><td>Combined route prediction with camera yaw/pitch/FOV and generation-ready state.</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="box" style="margin-top:16px">
+      <h2>Latest Generated Assets</h2>
+      <div class="asset-list" id="latestAssets"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+function $(id){return document.getElementById(id)}
+function showTab(event,id){
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+  $(id).classList.add('active');
+  const navButton=document.querySelector(`nav button[onclick*="'${id}'"]`);
+  if(navButton)navButton.classList.add('active');
+  if(id==='system')loadResults();
+}
+function setBackend(ok,text){
+  $('serverDot').style.background=ok?'var(--green)':'var(--red)';
+  $('serverText').textContent=text;
+}
+function statGrid(items){
+  return items.map(([k,v])=>`<div class="stat"><span>${k}</span><strong>${v ?? '-'}</strong></div>`).join('');
+}
+function escapeHtml(value){
+  return String(value ?? '').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function listItems(items){
+  return (items||[]).map(item=>`<li>${escapeHtml(item)}</li>`).join('');
+}
+async function generateMesh(){
+  const prompt=$('prompt').value.trim();
+  $('genStatus').textContent='Generating files...';
+  $('meshDownloads').innerHTML='';
+  $('previewBox').innerHTML='<p>Working.</p>';
+  try{
+    const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error||'Generation failed');
+    setBackend(true,'Backend running');
+    const q=data.quality||{};
+    $('previewBox').innerHTML=`<img src="${data.preview_url}?t=${Date.now()}" alt="Generated mesh preview">`;
+    $('meshStats').innerHTML=statGrid([
+      ['Kind',data.kind],['Material',data.material],['Vertices',data.vertices],['Faces',data.faces],
+      ['Watertight',q.watertight?'Yes':'No'],['Area',q.surface_area],['Volume',q.volume],['Boundary',q.boundary_edges]
+    ]);
+    $('meshDownloads').innerHTML=[
+      ['OBJ',data.obj_url,'primary'],['STL',data.stl_url,''],['MTL',data.mtl_url,''],['Metadata',data.metadata_url,''],['Preview',data.preview_url,'']
+    ].map(([name,url,cls])=>`<a class="linkbtn ${cls}" href="${url}" ${name==='Preview'?'target="_blank"':'download'}>${name}</a>`).join('');
+    $('genStatus').textContent=`Saved ${data.job_id}`;
+    loadResults();
+  }catch(err){
+    setBackend(false,'Backend offline');
+    $('genStatus').textContent=err.message;
+    $('previewBox').innerHTML='<p>Start backend with python app.py</p>';
+  }
+}
+function readFileAsDataUrl(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);
+    reader.onerror=()=>reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+let lastImagePrompt='';
+async function analyzeImage(){
+  const file=$('imageFile').files[0];
+  if(!file){$('imageStatus').textContent='Choose an image first.';return}
+  $('imageStatus').textContent='Analyzing image.';
+  $('analysisPreview').innerHTML='<p>Working.</p>';
+  $('imageDownloads').innerHTML='';
+  try{
+    const image=await readFileAsDataUrl(file);
+    const res=await fetch('/api/analyze-image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image,filename:file.name,object_hint:$('objectHint').value})});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error||'Image analysis failed');
+    setBackend(true,'Backend running');
+    lastImagePrompt=data.suggested_prompt;
+    $('imagePrompt').value=data.suggested_prompt;
+    $('analysisPreview').innerHTML=`<img src="${data.report_url}?t=${Date.now()}" alt="Image analysis report">`;
+    $('imageStats').innerHTML=statGrid([
+      ['Scene',data.scene_type],['Kind',data.suggested_kind],['Material',data.suggested_material],['Size',`${data.width}x${data.height}`],
+      ['Brightness',data.brightness],['Contrast',data.contrast],['Saturation',`${data.saturation}%`],['Colors',data.dominant_colors.map(c=>c.name).join(', ')]
+    ]);
+    $('imageDownloads').innerHTML=`<a class="linkbtn primary" href="${data.report_url}" target="_blank">Open Report</a><a class="linkbtn" href="${data.upload_url}" target="_blank">Uploaded Image</a><a class="linkbtn" href="${data.metadata_url}" target="_blank">Analysis JSON</a>`;
+    $('imageStatus').textContent='Image analyzed. You can use the suggested prompt for 3D generation.';
+  }catch(err){
+    setBackend(false,'Backend offline');
+    $('imageStatus').textContent=err.message;
+    $('analysisPreview').innerHTML='<p>Start backend with python app.py</p>';
+  }
+}
+function useImagePrompt(){
+  const prompt=$('imagePrompt').value.trim()||lastImagePrompt;
+  if(!prompt){$('imageStatus').textContent='Analyze an image first.';return}
+  $('prompt').value=prompt;
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+  $('generate').classList.add('active');
+  document.querySelector('nav button[onclick*="generate"]').classList.add('active');
+}
+async function predictRoute(){
+  $('navStatus').textContent='Predicting.';
+  $('predictions').innerHTML='';
+  $('routeDownloads').innerHTML='';
+  $('routePreview').innerHTML='<p>Generating route image.</p>';
+  try{
+    const body={
+      instruction:$('instruction').value,
+      camera_yaw:Number($('yaw').value||0),
+      camera_pitch:Number($('pitch').value||15),
+      camera_fov:Number($('fov').value||60),
+      n_candidates:3
+    };
+    const res=await fetch('/api/navigate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error||'Prediction failed');
+    setBackend(true,'Backend running');
+    const nav=data.navigation;
+    const top=nav.imaginations[0]||{};
+    const target=(nav.semantic_cues.filter(c=>c.cue_type==='room').pop()||nav.semantic_cues.filter(c=>c.cue_type==='landmark').pop()||{}).text||'-';
+    $('routePreview').innerHTML=`<img src="${data.prediction_preview_url}?t=${Date.now()}" alt="Predicted route image">`;
+    $('routeDownloads').innerHTML=`<a class="linkbtn primary" href="${data.prediction_preview_url}" target="_blank">Open Route Image</a><a class="linkbtn" href="${data.prediction_report_url}" download>Mission Brief</a><a class="linkbtn" href="${data.prediction_preview_url}" download>Download SVG</a><a class="linkbtn" href="${data.prediction_metadata_url}" target="_blank">Prediction JSON</a>`;
+    $('navTopStats').innerHTML=statGrid([
+      ['Target',target],['Action',top.next_action||'-'],['Confidence',top.confidence?`${Math.round(top.confidence*100)}%`:'-'],['Direction',data.world.camera.direction]
+    ]);
+    const traceHtml=(nav.route_trace||[]).length?`
+      <div class="result-section">
+        <div class="section-head">
+          <div>
+            <strong>Route Trace</strong>
+            <p>Ordered movement primitives generated from the instruction.</p>
+          </div>
+          <span class="pill">${escapeHtml((nav.route_trace||[]).length)} steps</span>
+        </div>
+        <div class="section-body trace">
+          ${(nav.route_trace||[]).map(s=>`
+            <div class="trace-step">
+              <div><div class="step-num">${escapeHtml(s.step)}</div></div>
+              <div class="trace-main">
+                <span>Command</span>
+                <strong>${escapeHtml(s.command)}</strong>
+                <p>${escapeHtml(s.expected_observation)}</p>
+                <p>${escapeHtml(s.stop_when)}</p>
+              </div>
+              <div class="trace-metrics">
+                <div class="metric"><span>Yaw</span><strong>${escapeHtml(s.heading_delta_deg)} deg</strong></div>
+                <div class="metric"><span>Distance</span><strong>${escapeHtml(s.distance_m)} m</strong></div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>`:'';
+    const brief=nav.execution_brief||{};
+    const briefHtml=brief.goal?`
+      <div class="result-section">
+        <div class="section-head">
+          <div>
+            <strong>Safety Checks</strong>
+            <p>Validation signals before committing to the target room.</p>
+          </div>
+          <span class="pill">${escapeHtml(brief.goal)}</span>
+        </div>
+        <div class="section-body brief-grid">
+          <div class="brief-section"><strong>Checkpoints</strong><ul>${listItems(brief.checkpoints)}</ul></div>
+          <div class="brief-section"><strong>Verify Before Entering</strong><ul>${listItems(brief.verify)}</ul></div>
+          <div class="brief-section"><strong>Recovery</strong><p>${escapeHtml(brief.recovery)}</p></div>
+          <div class="brief-section"><strong>Risk</strong><p>${escapeHtml(brief.risk)}</p></div>
+        </div>
+      </div>`:'';
+    const obsHtml=(nav.simulated_observations||[]).length?`
+      <div class="result-section">
+        <div class="section-head">
+          <div>
+            <strong>Local Sensor Replay</strong>
+            <p>Estimated pose and visible cues at each predicted viewpoint.</p>
+          </div>
+          <span class="pill">semantic sim</span>
+        </div>
+        <div class="section-body obs-grid">
+          ${(nav.simulated_observations||[]).map(o=>`
+            <div class="obs-card">
+              <div class="obs-card-head">
+                <strong>${escapeHtml(o.viewpoint_id)}</strong>
+                <span class="pill">${Math.round((o.confidence||0)*100)}%</span>
+              </div>
+              <div class="obs-metrics">
+                <div class="metric"><span>X/Y</span><strong>${escapeHtml(o.pose.x)}, ${escapeHtml(o.pose.y)}</strong></div>
+                <div class="metric"><span>Heading</span><strong>${escapeHtml(o.pose.heading_deg)} deg</strong></div>
+                <div class="metric"><span>Z</span><strong>${escapeHtml(o.pose.z)} m</strong></div>
+              </div>
+              <div class="evidence">${(o.visible||[]).map(v=>`<span class="pill">${escapeHtml(v)}</span>`).join('')}</div>
+              <div class="progress" style="margin-top:10px"><span style="width:${Math.round((o.progress||0)*100)}%"></span></div>
+            </div>
+          `).join('')}
+        </div>
+      </div>`:'';
+    const candidatesHtml=nav.imaginations.length?`
+      <div class="result-section">
+        <div class="section-head">
+          <div>
+            <strong>Prediction Evidence</strong>
+            <p>Ranked hypotheses and extracted cues used by the local parser.</p>
+          </div>
+          <span class="pill">${escapeHtml(nav.semantic_cues.length)} cues</span>
+        </div>
+        <div class="section-body candidate-list">
+          ${nav.imaginations.map(c=>`
+            <div class="candidate">
+              <strong>#${c.rank} ${escapeHtml(c.next_action)}</strong>
+              <p>${escapeHtml(c.hypothesis)}</p>
+              <div class="evidence">${c.evidence.map(e=>`<span class="pill">${escapeHtml(e)}</span>`).join('')}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>`:'';
+    $('predictions').innerHTML=traceHtml+obsHtml+briefHtml+candidatesHtml;
+    $('navStatus').textContent=`Parsed ${nav.semantic_cues.length} cues.`;
+  }catch(err){
+    setBackend(false,'Backend offline');
+    $('navStatus').textContent=err.message;
+    $('routePreview').innerHTML='<p>Start backend with python app.py</p>';
+  }
+}
+async function uploadR2R(){
+  const file=$('r2rFile').files[0];
+  if(!file){$('r2rStatus').textContent='Choose a JSON file.';return}
+  try{
+    const payload=JSON.parse(await file.text());
+    const res=await fetch('/api/evaluate-r2r',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:payload})});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error||'Evaluation failed');
+    const s=data.scores;
+    $('evalStats').innerHTML=statGrid([
+      ['SR',`${s.SR.toFixed(2)}%`],['SPL',`${s.SPL.toFixed(2)}%`],['NE',`${s.NE.toFixed(3)}m`],['Episodes',data.n_records]
+    ]);
+    $('r2rStatus').textContent='Computed from uploaded JSON.';
+    setBackend(true,'Backend running');
+    loadResults();
+  }catch(err){$('r2rStatus').textContent=err.message}
+}
+async function loadResults(){
+  try{
+    const res=await fetch('/api/results');
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error||'Results failed');
+    setBackend(true,'Backend running');
+    $('assetStats').innerHTML=statGrid([
+      ['Assets',data.asset_count],['Avg Vertices',data.avg_vertices],['Avg Faces',data.avg_faces],['Mesh Score',data.generation_score?`${data.generation_score}%`:'-']
+    ]);
+    $('resultSource').textContent=`${data.source}. Updated ${new Date(data.updated_at*1000).toLocaleTimeString()}.`;
+    const assets=data.latest_assets||[];
+    const featured=assets[0];
+    $('featuredAsset').innerHTML=featured?`
+      <img src="${featured.preview_url}?t=${Date.now()}" alt="${escapeHtml(featured.prompt)}">
+      <div class="featured-copy">
+        <span class="pill">Latest generated asset</span>
+        <h2>${escapeHtml(featured.kind || 'mesh')} / ${escapeHtml(featured.material || 'material')}</h2>
+        <p>${escapeHtml(featured.prompt)}</p>
+        <div class="bar">
+          <a class="linkbtn primary" href="${featured.preview_url}" target="_blank">Open Preview</a>
+          <a class="linkbtn" href="${featured.metadata_url}" target="_blank">Metadata</a>
+        </div>
+      </div>
+    `:`
+      <div class="featured-copy">
+        <span class="pill">No asset yet</span>
+        <h2>DWF System Showcase</h2>
+        <p>Generate a mesh to feature it here as the first presentation image.</p>
+      </div>
+    `;
+    $('latestAssets').innerHTML=assets.length?assets.map(a=>`
+      <div class="asset">
+        <img src="${a.preview_url}?t=${Date.now()}" alt="${escapeHtml(a.prompt)}">
+        <div>
+          <h3>${escapeHtml(a.kind || 'mesh')} / ${escapeHtml(a.material || 'material')}</h3>
+          <p>${escapeHtml(a.prompt)}</p>
+          <div class="bar"><a class="linkbtn" href="${a.metadata_url}" target="_blank">Metadata</a></div>
+        </div>
+      </div>
+    `).join(''):'<p>No generated assets yet.</p>';
+  }catch(err){
+    setBackend(false,'Backend offline');
+    $('resultSource').textContent='Start backend with python app.py';
+  }
+}
+window.addEventListener('load',()=>{loadResults();});
+</script>
+</body>
+</html>

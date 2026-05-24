@@ -1,0 +1,38 @@
+model:
+  name: WorldDreamer
+  world_dim: 1024
+  atd:
+    llm: google/flan-t5-xl
+    freeze_llm: true
+    num_query_tokens: 32
+    qformer_hidden_dim: 768
+    qformer_num_layers: 6
+    qformer_num_heads: 12
+    sgca_num_layers: 4
+    sgca_hidden_dim: 512
+    graph_hidden_dim: 768
+    graph_num_layers: 4
+  xdreamer:
+    sd_model_id: stabilityai/stable-diffusion-2-1-base
+    cam_feature_dim: 1024
+    text_feature_dim: 1024
+    lora_rank: 4
+    ama_loss_weight: 0.1
+training:
+  nav_steps_per_iter: 2
+  gen_steps_per_iter: 1
+  total_iters: 300000
+  lr: 5e-6
+  weight_decay: 0.05
+  batch_size: 2
+  lambda_nav: 1.0
+  lambda_gen: 0.5
+  lambda_world: 0.1
+data:
+  nav_dataset: r2r
+  nav_data_dir: data/R2R
+  use_prevalent: true
+evaluation:
+  nav_split: val_unseen
+  nav_metrics: [SR, SPL, NE, OSR]
+  gen_metrics: [CLIP_Score, OpenCLIP_Score]
